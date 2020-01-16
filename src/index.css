@@ -3,6 +3,25 @@ body {
 }
 
 canvas {
-    width: 99vw;
-    height: 99vh;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+}
+
+#inputContainer {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+}
+
+.sliderLabel {
+    font-size: small;
+}
+
+.sliderValue {
+    font-size: small;
+}
+
+.sliderContainer {
+    display: flex;
 }
