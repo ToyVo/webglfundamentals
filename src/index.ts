@@ -3,29 +3,24 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import fragment from './Shaders/fragment.glsl';
 import vertex from './Shaders/vertex.glsl';
 import createProgram from './program';
-// eslint-disable-next-line no-unused-vars
-import Geometry from './Geometry/Geometry';
 import F from './Geometry/F';
+import Matrix3 from './Matrix3';
 
 class Drawing {
-	private gl: WebGLRenderingContext;
-	private canvas: HTMLCanvasElement;
-	private program: WebGLProgram;
+	private readonly gl: WebGLRenderingContext;
+	private readonly canvas: HTMLCanvasElement;
+	private readonly program: WebGLProgram;
 
 	//program locations
-	private positionAttributeLocation: GLint;
-	private resolutionUniformLocation: WebGLUniformLocation;
-	private colorUniformLocation: WebGLUniformLocation;
-	private translationUniformLocation: WebGLUniformLocation;
-	private rotationUniformLocation: WebGLUniformLocation;
-	private scaleUniformLocation: WebGLUniformLocation;
+	private readonly positionLocation: GLint;
+	private readonly colorLocation: WebGLUniformLocation;
+	private readonly matrixLocation: WebGLUniformLocation;
+	private readonly positionBuffer: WebGLBuffer;
 
-	private positionBuffer: WebGLBuffer;
-	private objects = new Array<Geometry>();
-
-	public translation = [0, 0];
-	public rotation = [0, 1];
-	public scale = [1, 1];
+	private geometry: F;
+	private translation: {x: number, y: number} = {x: 0, y: 0};
+	private rotation: number = 0;
+	private scale: {x: number, y: number} = {x: 1, y: 1};
 
 	constructor() {
 		// Get A WebGL context
@@ -33,28 +28,23 @@ class Drawing {
 		document.body.appendChild(this.canvas);
 		this.gl = this.canvas.getContext('webgl');
 
-		this.setupInput();
-
 		// get the program passing in the source for vertex and fragment shaders
 		this.program = createProgram(this.gl, vertex, fragment);
 
-		// look up where the vertex data needs to go.
-		this.positionAttributeLocation = this.gl.getAttribLocation(this.program, 'a_position');
-		this.resolutionUniformLocation = this.gl.getUniformLocation(this.program, 'u_resolution');
-		this.colorUniformLocation = this.gl.getUniformLocation(this.program, 'u_color');
-		this.translationUniformLocation = this.gl.getUniformLocation(this.program, 'u_translation');
-		this.rotationUniformLocation = this.gl.getUniformLocation(this.program, 'u_rotation');
-		this.scaleUniformLocation = this.gl.getUniformLocation(this.program, 'u_scale');
+		// look up where the data needs to go.
+		this.positionLocation = this.gl.getAttribLocation(this.program, 'a_position');
+		this.colorLocation = this.gl.getUniformLocation(this.program, 'u_color');
+		this.matrixLocation = this.gl.getUniformLocation(this.program, 'u_matrix');
 
-		// Create a buffer and put three 2d clip space points in it
+		// Create a buffer and bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
 		this.positionBuffer = this.gl.createBuffer();
-
-		// Bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
 
 		// setup geometries
-		this.objects.push(new F(this.gl, [Math.random(), Math.random(), Math.random(), 1]));
-		//this.objects.push(new Rectangle(this.gl, 200, 200, 30, 30, [Math.random(), Math.random(), Math.random(), 1]));
+		this.geometry = new F(this.gl, [Math.random(), Math.random(), Math.random(), 1]);
+
+		// Setup UI
+		this.setupInput();
 
 		this.drawScene();
 	}
@@ -65,45 +55,42 @@ class Drawing {
 		this.canvas.height = this.canvas.clientHeight;
 
 		// Tell WebGL how to convert from clip space to pixels
-		this.gl.viewport(0, 0, this.gl.canvas.width, this.gl.canvas.height);
+		this.gl.viewport(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
 
 		// Clear the canvas
-		this.gl.clearColor(0, 0, 0, 0);
 		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
 
 		// Tell it to use our program (pair of shaders)
 		this.gl.useProgram(this.program);
 
 		// Turn on the attribute
-		this.gl.enableVertexAttribArray(this.positionAttributeLocation);
+		this.gl.enableVertexAttribArray(this.positionLocation);
 
 		// Bind the position buffer.
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
 
 		// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-		const size = 2;          // 2 components per iteration
-		const type = this.gl.FLOAT;   // the data is 32bit floats
-		const normalize = false; // don't normalize the data
-		const stride = 0;        // 0 = move forward size * sizeof(type) each iteration to get the next position
-		const offset = 0;        // start at the beginning of the buffer
-		this.gl.vertexAttribPointer(this.positionAttributeLocation, size, type, normalize, stride, offset);
+		const size = 2;                // 2 components per iteration
+		const type = this.gl.FLOAT;    // the data is 32bit floats
+		const normalize = false;       // don't normalize the data
+		const stride = 0;              // 0 = move forward size * sizeof(type) each iteration to get the next position
+		const offset = 0;              // start at the beginning of the buffer
+		this.gl.vertexAttribPointer(this.positionLocation, size, type, normalize, stride, offset);
 
-		// Set the resolution
-		this.gl.uniform2f(this.resolutionUniformLocation, this.gl.canvas.width, this.gl.canvas.height);
+		// Compute the matrix
+		const matrix = Matrix3.projectionMatrix(this.canvas.clientWidth, this.canvas.clientHeight)
+			.translate(this.translation.x, this.translation.y)
+			.rotate(this.rotation)
+			.scale(this.scale.x, this.scale.y)
+			// change origin to center of object
+			.translate(-50, -75);
 
-		// set the translation
-		this.gl.uniform2fv(this.translationUniformLocation, this.translation);
+		// Set the Matrix
+		this.gl.uniformMatrix3fv(this.matrixLocation, false, matrix.getData());
 
-		// set the rotation
-		this.gl.uniform2fv(this.rotationUniformLocation, this.rotation);
+		this.gl.uniform4fv(this.colorLocation, this.geometry.color);
+		this.geometry.draw(this.gl);
 
-		// set the scale
-		this.gl.uniform2fv(this.scaleUniformLocation, this.scale);
-
-		for(const obj of this.objects) {
-			this.gl.uniform4fv(this.colorUniformLocation, obj.color);
-			obj.draw(this.gl);
-		}
 	}
 
 	setupInput() {
@@ -124,34 +111,34 @@ class Drawing {
 		xLabel.innerText = 'x';
 		xLabel.className = 'sliderLabel';
 		const xValue = document.createElement('div');
-		xValue.innerText = String(this.translation[0]);
+		xValue.innerText = String(this.translation.x);
 		xValue.className = 'sliderValue';
 
 		const xSlider = document.createElement('input');
 		xSlider.min = '0';
 		xSlider.max = this.canvas.clientWidth.toString();
-		xSlider.value = String(this.translation[0]);
+		xSlider.value = String(this.translation.x);
 		xSlider.oninput = () => {
-			this.translation[0] = Number.parseFloat(xSlider.value);
+			this.translation.x = Number.parseFloat(xSlider.value);
 			this.drawScene();
-			xValue.innerText = xSlider.value;
+			xValue.innerText = String(this.translation.x);
 		};
 
 		const yLabel = document.createElement('div');
 		yLabel.innerText = 'y';
 		yLabel.className = 'sliderLabel';
 		const yValue = document.createElement('div');
-		yValue.innerText = String(this.translation[1]);
+		yValue.innerText = String(this.translation.y);
 		yValue.className = 'sliderValue';
 
 		const ySlider = document.createElement('input');
 		ySlider.min = '0';
 		ySlider.max = this.canvas.clientHeight.toString();
-		ySlider.value = String(this.translation[1]);
+		ySlider.value = String(this.translation.y);
 		ySlider.oninput = () => {
-			this.translation[1] = Number.parseFloat(ySlider.value);
+			this.translation.y = Number.parseFloat(ySlider.value);
 			this.drawScene();
-			yValue.innerText = ySlider.value;
+			yValue.innerText = String(this.translation.y);
 		};
 
 		const rotationLabel = document.createElement('div');
@@ -167,47 +154,45 @@ class Drawing {
 		rotationSlider.value = '0';
 		rotationSlider.step = String(Math.PI / 360);
 		rotationSlider.oninput = () => {
-			const radians = Number.parseFloat(rotationSlider.value);
-			this.rotation[0] = Math.sin(radians);
-			this.rotation[1] = Math.cos(radians);
+			this.rotation = Number.parseFloat(rotationSlider.value);
 			this.drawScene();
-			rotationValue.innerText = String(Math.floor(radians * 180 / Math.PI));
+			rotationValue.innerText = String(Math.floor(this.rotation * 180 / Math.PI));
 		};
 
 		const xScaleLabel = document.createElement('div');
 		xScaleLabel.innerText = 'x scale';
 		xScaleLabel.className = 'sliderLabel';
 		const xScaleValue = document.createElement('div');
-		xScaleValue.innerText = String(this.scale[0]);
+		xScaleValue.innerText = String(this.scale.x);
 		xScaleValue.className = 'sliderValue';
 
 		const xScaleSlider = document.createElement('input');
 		xScaleSlider.min = '-5';
 		xScaleSlider.max = '5';
-		xScaleSlider.step = '0.1';
-		xScaleSlider.value = String(this.scale[0]);
+		xScaleSlider.step = '0.05';
+		xScaleSlider.value = String(this.scale.x);
 		xScaleSlider.oninput = () => {
-			this.scale[0] = Number.parseFloat(xScaleSlider.value);
+			this.scale.x = Number.parseFloat(xScaleSlider.value);
 			this.drawScene();
-			xScaleValue.innerText = xScaleSlider.value;
+			xScaleValue.innerText = String(this.scale.x);
 		};
 
 		const yScaleLabel = document.createElement('div');
 		yScaleLabel.innerText = 'y scale';
 		yScaleLabel.className = 'sliderLabel';
 		const yScaleValue = document.createElement('div');
-		yScaleValue.innerText = String(this.scale[1]);
+		yScaleValue.innerText = String(this.scale.y);
 		yScaleValue.className = 'sliderValue';
 
 		const yScaleSlider = document.createElement('input');
 		yScaleSlider.min = '-5';
 		yScaleSlider.max = '5';
-		yScaleSlider.step = '0.1';
-		yScaleSlider.value = String(this.scale[1]);
+		yScaleSlider.step = '0.05';
+		yScaleSlider.value = String(this.scale.y);
 		yScaleSlider.oninput = () => {
-			this.scale[1] = Number.parseFloat(yScaleSlider.value);
+			this.scale.y = Number.parseFloat(yScaleSlider.value);
 			this.drawScene();
-			yScaleValue.innerText = yScaleSlider.value;
+			yScaleValue.innerText = String(this.scale.y);
 		};
 
 		for(const slider of [xSlider, ySlider, rotationSlider, xScaleSlider, yScaleSlider]) {
