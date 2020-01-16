@@ -3,22 +3,21 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import fragment from './Shaders/fragment.glsl';
 import vertex from './Shaders/vertex.glsl';
 import createProgram from './program';
-import F from './Geometry/F';
 import Matrix3 from './Matrix3';
+import TrianglesGeometry from './Geometry/TrianglesGeometry';
 
 class Drawing {
 	private readonly gl: WebGLRenderingContext;
 	private readonly canvas: HTMLCanvasElement;
 	private readonly program: WebGLProgram;
-
-	//program locations
 	private readonly positionLocation: GLint;
-	private readonly colorLocation: WebGLUniformLocation;
+	private readonly colorLocation: GLint;
 	private readonly matrixLocation: WebGLUniformLocation;
 	private readonly positionBuffer: WebGLBuffer;
+	private readonly colorBuffer: WebGLBuffer;
 
-	private geometry: F;
-	private translation: {x: number, y: number} = {x: 0, y: 0};
+	private geometry: TrianglesGeometry;
+	private translation: {x: number, y: number} = {x: 500, y: 500};
 	private rotation: number = 0;
 	private scale: {x: number, y: number} = {x: 1, y: 1};
 
@@ -33,15 +32,21 @@ class Drawing {
 
 		// look up where the data needs to go.
 		this.positionLocation = this.gl.getAttribLocation(this.program, 'a_position');
-		this.colorLocation = this.gl.getUniformLocation(this.program, 'u_color');
+		this.colorLocation = this.gl.getAttribLocation(this.program, 'a_color');
 		this.matrixLocation = this.gl.getUniformLocation(this.program, 'u_matrix');
+
+		// setup geometries
+		this.geometry = TrianglesGeometry.F(this.gl);
 
 		// Create a buffer and bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
 		this.positionBuffer = this.gl.createBuffer();
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
+		this.geometry.bufferPoints(this.gl);
 
-		// setup geometries
-		this.geometry = new F(this.gl, [Math.random(), Math.random(), Math.random(), 1]);
+		// setup colors
+		this.colorBuffer = this.gl.createBuffer();
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.colorBuffer);
+		this.geometry.bufferColors(this.gl);
 
 		// Setup UI
 		this.setupInput();
@@ -77,18 +82,21 @@ class Drawing {
 		const offset = 0;              // start at the beginning of the buffer
 		this.gl.vertexAttribPointer(this.positionLocation, size, type, normalize, stride, offset);
 
+		this.gl.enableVertexAttribArray(this.colorLocation);
+		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.colorBuffer);
+		this.gl.vertexAttribPointer(this.colorLocation, 4, this.gl.UNSIGNED_BYTE, true, 0, 0);
+
 		// Compute the matrix
 		const matrix = Matrix3.projectionMatrix(this.canvas.clientWidth, this.canvas.clientHeight)
 			.translate(this.translation.x, this.translation.y)
 			.rotate(this.rotation)
-			.scale(this.scale.x, this.scale.y)
-			// change origin to center of object
-			.translate(-50, -75);
+			.scale(this.scale.x, this.scale.y);
+		// change origin to center of object
+		//.translate(-50, -75);
 
 		// Set the Matrix
-		this.gl.uniformMatrix3fv(this.matrixLocation, false, matrix.getData());
+		this.gl.uniformMatrix3fv(this.matrixLocation, false, matrix.data);
 
-		this.gl.uniform4fv(this.colorLocation, this.geometry.color);
 		this.geometry.draw(this.gl);
 
 	}
