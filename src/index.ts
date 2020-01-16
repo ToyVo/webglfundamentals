@@ -102,28 +102,18 @@ class Drawing {
 	}
 
 	setupInput() {
-		const div = document.createElement('div');
-		div.id = 'inputContainer';
-		const xDiv = document.createElement('div');
-		xDiv.className = 'sliderContainer';
-		const yDiv = document.createElement('div');
-		yDiv.className = 'sliderContainer';
-		const rotationDiv = document.createElement('div');
-		rotationDiv.className = 'sliderContainer';
-		const xScaleDiv = document.createElement('div');
-		xScaleDiv.className = 'sliderContainer';
-		const yScaleDiv = document.createElement('div');
-		yScaleDiv.className = 'sliderContainer';
-
-		const xLabel = document.createElement('div');
-		xLabel.innerText = 'x';
-		xLabel.className = 'sliderLabel';
-		const xValue = document.createElement('div');
+		const xValue = document.getElementById('xValue');
 		xValue.innerText = String(this.translation.x);
-		xValue.className = 'sliderValue';
+		const yValue = document.getElementById('yValue');
+		yValue.innerText = String(this.translation.y);
+		const rotationValue = document.getElementById('rotationValue');
+		rotationValue.innerText = String(0);
+		const xScaleValue = document.getElementById('xScaleValue');
+		xScaleValue.innerText = String(this.scale.x);
+		const yScaleValue = document.getElementById('yScaleValue');
+		yScaleValue.innerText = String(this.scale.y);
 
-		const xSlider = document.createElement('input');
-		xSlider.min = '0';
+		const xSlider = document.getElementById('xSlider') as HTMLInputElement;
 		xSlider.max = this.canvas.clientWidth.toString();
 		xSlider.value = String(this.translation.x);
 		xSlider.oninput = () => {
@@ -132,15 +122,7 @@ class Drawing {
 			xValue.innerText = String(this.translation.x);
 		};
 
-		const yLabel = document.createElement('div');
-		yLabel.innerText = 'y';
-		yLabel.className = 'sliderLabel';
-		const yValue = document.createElement('div');
-		yValue.innerText = String(this.translation.y);
-		yValue.className = 'sliderValue';
-
-		const ySlider = document.createElement('input');
-		ySlider.min = '0';
+		const ySlider = document.getElementById('ySlider') as HTMLInputElement;
 		ySlider.max = this.canvas.clientHeight.toString();
 		ySlider.value = String(this.translation.y);
 		ySlider.oninput = () => {
@@ -149,17 +131,9 @@ class Drawing {
 			yValue.innerText = String(this.translation.y);
 		};
 
-		const rotationLabel = document.createElement('div');
-		rotationLabel.innerText = 'rotation';
-		rotationLabel.className = 'sliderLabel';
-		const rotationValue = document.createElement('div');
-		rotationValue.innerText = '0';
-		rotationValue.className = 'sliderValue';
-
-		const rotationSlider = document.createElement('input');
-		rotationSlider.min = '0';
+		const rotationSlider = document.getElementById('rotationSlider') as HTMLInputElement;
 		rotationSlider.max = String(Math.PI * 2);
-		rotationSlider.value = '0';
+		rotationSlider.value = String(this.rotation);
 		rotationSlider.step = String(Math.PI / 360);
 		rotationSlider.oninput = () => {
 			this.rotation = Number.parseFloat(rotationSlider.value);
@@ -167,17 +141,7 @@ class Drawing {
 			rotationValue.innerText = String(Math.floor(this.rotation * 180 / Math.PI));
 		};
 
-		const xScaleLabel = document.createElement('div');
-		xScaleLabel.innerText = 'x scale';
-		xScaleLabel.className = 'sliderLabel';
-		const xScaleValue = document.createElement('div');
-		xScaleValue.innerText = String(this.scale.x);
-		xScaleValue.className = 'sliderValue';
-
-		const xScaleSlider = document.createElement('input');
-		xScaleSlider.min = '-5';
-		xScaleSlider.max = '5';
-		xScaleSlider.step = '0.05';
+		const xScaleSlider = document.getElementById('xScaleSlider') as HTMLInputElement;
 		xScaleSlider.value = String(this.scale.x);
 		xScaleSlider.oninput = () => {
 			this.scale.x = Number.parseFloat(xScaleSlider.value);
@@ -185,50 +149,13 @@ class Drawing {
 			xScaleValue.innerText = String(this.scale.x);
 		};
 
-		const yScaleLabel = document.createElement('div');
-		yScaleLabel.innerText = 'y scale';
-		yScaleLabel.className = 'sliderLabel';
-		const yScaleValue = document.createElement('div');
-		yScaleValue.innerText = String(this.scale.y);
-		yScaleValue.className = 'sliderValue';
-
-		const yScaleSlider = document.createElement('input');
-		yScaleSlider.min = '-5';
-		yScaleSlider.max = '5';
-		yScaleSlider.step = '0.05';
+		const yScaleSlider = document.getElementById('yScaleSlider') as HTMLInputElement;
 		yScaleSlider.value = String(this.scale.y);
 		yScaleSlider.oninput = () => {
 			this.scale.y = Number.parseFloat(yScaleSlider.value);
 			this.drawScene();
 			yScaleValue.innerText = String(this.scale.y);
 		};
-
-		for(const slider of [xSlider, ySlider, rotationSlider, xScaleSlider, yScaleSlider]) {
-			slider.type = 'range';
-			slider.className = 'slider';
-		}
-
-		document.body.appendChild(div);
-		div.appendChild(xDiv);
-		div.appendChild(yDiv);
-		div.appendChild(rotationDiv);
-		div.appendChild(xScaleDiv);
-		div.appendChild(yScaleDiv);
-		xDiv.appendChild(xLabel);
-		xDiv.appendChild(xSlider);
-		xDiv.appendChild(xValue);
-		yDiv.appendChild(yLabel);
-		yDiv.appendChild(ySlider);
-		yDiv.appendChild(yValue);
-		rotationDiv.appendChild(rotationLabel);
-		rotationDiv.appendChild(rotationSlider);
-		rotationDiv.appendChild(rotationValue);
-		xScaleDiv.appendChild(xScaleLabel);
-		xScaleDiv.appendChild(xScaleSlider);
-		xScaleDiv.appendChild(xScaleValue);
-		yScaleDiv.appendChild(yScaleLabel);
-		yScaleDiv.appendChild(yScaleSlider);
-		yScaleDiv.appendChild(yScaleValue);
 	}
 }
 
