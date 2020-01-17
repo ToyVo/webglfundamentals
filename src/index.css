@@ -8,20 +8,33 @@ canvas {
     display: block;
 }
 
-#inputContainer {
+#uiContainer {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: 10px;
+    right: 10px;
+    font-family: monospace;
+}
+
+#ui {
+    width: 200px;
+}
+
+.sliderContainer {
+    float: right;
+    display: flex;
+    align-items: center;
+    height: 1.7em;
 }
 
 .sliderLabel {
     font-size: small;
+    min-width: 10em;
+    text-align: right;
 }
 
 .sliderValue {
+    float: right;
     font-size: small;
-}
-
-.sliderContainer {
-    display: flex;
+    order: 1;
+    min-width: 3em;
 }
