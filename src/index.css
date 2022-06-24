@@ -1,0 +1,8 @@
+body {
+    margin: 0;
+}
+
+canvas {
+    width: 99vw;
+    height: 99vh;
+}
