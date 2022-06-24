@@ -11,6 +11,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
+    "bootstrap": "^4.4.1",
     "three": "^0.112.1"
   },
   "devDependencies": {
