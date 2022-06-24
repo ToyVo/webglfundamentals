@@ -3,7 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import fragment from './Shaders/fragment.glsl';
 import vertex from './Shaders/vertex.glsl';
 import createProgram from './program';
-import Matrix3 from './Matrix3';
+import Matrix from './Matrix';
 import TrianglesGeometry from './Geometry/TrianglesGeometry';
 
 class Drawing {
@@ -17,9 +17,9 @@ class Drawing {
 	private readonly colorBuffer: WebGLBuffer;
 
 	private geometry: TrianglesGeometry;
-	private translation: {x: number, y: number} = {x: 500, y: 500};
-	private rotation: number = 0;
-	private scale: {x: number, y: number} = {x: 1, y: 1};
+	private translation: {x: number, y: number, z: number} = {x: 500, y: 500, z: 500};
+	private rotation: {x: number, y: number, z: number} = {x: 0, y: 0, z: 0};
+	private scale: {x: number, y: number, z: number} = {x: 1, y: 1, z: 1};
 
 	constructor() {
 		// Get A WebGL context
@@ -68,34 +68,24 @@ class Drawing {
 		// Tell it to use our program (pair of shaders)
 		this.gl.useProgram(this.program);
 
-		// Turn on the attribute
+		// Turn on the attribute, Bind the position buffer, Tell the attribute how to get data out of positionBuffer
+		// (ARRAY_BUFFER)
 		this.gl.enableVertexAttribArray(this.positionLocation);
-
-		// Bind the position buffer.
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.positionBuffer);
-
-		// Tell the attribute how to get data out of positionBuffer (ARRAY_BUFFER)
-		const size = 2;                // 2 components per iteration
-		const type = this.gl.FLOAT;    // the data is 32bit floats
-		const normalize = false;       // don't normalize the data
-		const stride = 0;              // 0 = move forward size * sizeof(type) each iteration to get the next position
-		const offset = 0;              // start at the beginning of the buffer
-		this.gl.vertexAttribPointer(this.positionLocation, size, type, normalize, stride, offset);
+		this.gl.vertexAttribPointer(this.positionLocation, 3, this.gl.FLOAT, false, 0, 0);
 
 		this.gl.enableVertexAttribArray(this.colorLocation);
 		this.gl.bindBuffer(this.gl.ARRAY_BUFFER, this.colorBuffer);
 		this.gl.vertexAttribPointer(this.colorLocation, 4, this.gl.UNSIGNED_BYTE, true, 0, 0);
 
 		// Compute the matrix
-		const matrix = Matrix3.projectionMatrix(this.canvas.clientWidth, this.canvas.clientHeight)
-			.translate(this.translation.x, this.translation.y)
-			.rotate(this.rotation)
-			.scale(this.scale.x, this.scale.y);
-		// change origin to center of object
-		//.translate(-50, -75);
+		const matrix = Matrix.projectionMatrix(this.canvas.clientWidth, this.canvas.clientWidth, this.canvas.clientHeight)
+			.translate(this.translation.x, this.translation.y, this.translation.z)
+			.rotate(this.rotation.x, this.rotation.y, this.rotation.z)
+			.scale(this.scale.x, this.scale.y, this.scale.z);
 
 		// Set the Matrix
-		this.gl.uniformMatrix3fv(this.matrixLocation, false, matrix.data);
+		this.gl.uniformMatrix4fv(this.matrixLocation, false, matrix.data);
 
 		this.geometry.draw(this.gl);
 
@@ -136,9 +126,9 @@ class Drawing {
 		rotationSlider.value = String(this.rotation);
 		rotationSlider.step = String(Math.PI / 360);
 		rotationSlider.oninput = () => {
-			this.rotation = Number.parseFloat(rotationSlider.value);
+			this.rotation.z = Number.parseFloat(rotationSlider.value);
 			this.drawScene();
-			rotationValue.innerText = String(Math.floor(this.rotation * 180 / Math.PI));
+			rotationValue.innerText = String(Math.floor(this.rotation.z * 180 / Math.PI));
 		};
 
 		const xScaleSlider = document.getElementById('xScaleSlider') as HTMLInputElement;
