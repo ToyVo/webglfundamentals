@@ -90,13 +90,26 @@ export default class Matrix {
 		]);
 	}
 
-	static projectionMatrix(width: number, height: number, depth): Matrix {
+	static projectionMatrix(width: number, height: number, depth: number): Matrix {
 		// Note: This matrix flips the Y axis so that 0 is at the top.
 		return new Matrix([
 			2 / width, 0, 0, 0,
 			0, -2 / height, 0, 0,
 			0, 0, 2 / depth, 0,
 			-1, 1, 0, 1
+		]);
+	}
+
+	static orthographicMatrix(left: number, right: number, bottom: number, top: number, near: number, far: number): Matrix {
+		return new Matrix([
+			2 / (right - left), 0, 0, 0,
+			0, 2 / (top - bottom), 0, 0,
+			0, 0, 2 / (near - far), 0,
+
+			(left + right) / (left - right),
+			(bottom + top) / (bottom - top),
+			(near + far) / (near - far),
+			1
 		]);
 	}
 
