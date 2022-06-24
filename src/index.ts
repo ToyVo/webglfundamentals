@@ -3,6 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import fragment from './Shaders/fragment.glsl';
 import vertex from './Shaders/vertex.glsl';
 import createProgram from './program';
+// eslint-disable-next-line no-unused-vars
 import Geometry from './Geometry/Geometry';
 import F from './Geometry/F';
 
@@ -17,12 +18,14 @@ class Drawing {
 	private colorUniformLocation: WebGLUniformLocation;
 	private translationUniformLocation: WebGLUniformLocation;
 	private rotationUniformLocation: WebGLUniformLocation;
+	private scaleUniformLocation: WebGLUniformLocation;
 
 	private positionBuffer: WebGLBuffer;
 	private objects = new Array<Geometry>();
 
 	public translation = [0, 0];
 	public rotation = [0, 1];
+	public scale = [1, 1];
 
 	constructor() {
 		// Get A WebGL context
@@ -41,6 +44,7 @@ class Drawing {
 		this.colorUniformLocation = this.gl.getUniformLocation(this.program, 'u_color');
 		this.translationUniformLocation = this.gl.getUniformLocation(this.program, 'u_translation');
 		this.rotationUniformLocation = this.gl.getUniformLocation(this.program, 'u_rotation');
+		this.scaleUniformLocation = this.gl.getUniformLocation(this.program, 'u_scale');
 
 		// Create a buffer and put three 2d clip space points in it
 		this.positionBuffer = this.gl.createBuffer();
@@ -93,6 +97,9 @@ class Drawing {
 		// set the rotation
 		this.gl.uniform2fv(this.rotationUniformLocation, this.rotation);
 
+		// set the scale
+		this.gl.uniform2fv(this.scaleUniformLocation, this.scale);
+
 		for(const obj of this.objects) {
 			this.gl.uniform4fv(this.colorUniformLocation, obj.color);
 			obj.draw(this.gl);
@@ -103,11 +110,15 @@ class Drawing {
 		const div = document.createElement('div');
 		div.id = 'inputContainer';
 		const xDiv = document.createElement('div');
-		xDiv.className='sliderContainer';
+		xDiv.className = 'sliderContainer';
 		const yDiv = document.createElement('div');
-		yDiv.className='sliderContainer';
+		yDiv.className = 'sliderContainer';
 		const rotationDiv = document.createElement('div');
-		rotationDiv.className='sliderContainer';
+		rotationDiv.className = 'sliderContainer';
+		const xScaleDiv = document.createElement('div');
+		xScaleDiv.className = 'sliderContainer';
+		const yScaleDiv = document.createElement('div');
+		yScaleDiv.className = 'sliderContainer';
 
 		const xLabel = document.createElement('div');
 		xLabel.innerText = 'x';
@@ -117,9 +128,9 @@ class Drawing {
 		xValue.className = 'sliderValue';
 
 		const xSlider = document.createElement('input');
+		xSlider.min = '0';
 		xSlider.max = this.canvas.clientWidth.toString();
 		xSlider.value = String(this.translation[0]);
-		xSlider.id = 'xSlider';
 		xSlider.oninput = () => {
 			this.translation[0] = Number.parseFloat(xSlider.value);
 			this.drawScene();
@@ -134,9 +145,9 @@ class Drawing {
 		yValue.className = 'sliderValue';
 
 		const ySlider = document.createElement('input');
+		ySlider.min = '0';
 		ySlider.max = this.canvas.clientHeight.toString();
 		ySlider.value = String(this.translation[1]);
-		ySlider.id = 'ySlider';
 		ySlider.oninput = () => {
 			this.translation[1] = Number.parseFloat(ySlider.value);
 			this.drawScene();
@@ -151,9 +162,9 @@ class Drawing {
 		rotationValue.className = 'sliderValue';
 
 		const rotationSlider = document.createElement('input');
+		rotationSlider.min = '0';
 		rotationSlider.max = String(Math.PI * 2);
 		rotationSlider.value = '0';
-		rotationSlider.id = 'rotationSlider';
 		rotationSlider.step = String(Math.PI / 360);
 		rotationSlider.oninput = () => {
 			const radians = Number.parseFloat(rotationSlider.value);
@@ -163,9 +174,44 @@ class Drawing {
 			rotationValue.innerText = String(Math.floor(radians * 180 / Math.PI));
 		};
 
-		for(const slider of [xSlider, ySlider, rotationSlider]) {
+		const xScaleLabel = document.createElement('div');
+		xScaleLabel.innerText = 'x scale';
+		xScaleLabel.className = 'sliderLabel';
+		const xScaleValue = document.createElement('div');
+		xScaleValue.innerText = String(this.scale[0]);
+		xScaleValue.className = 'sliderValue';
+
+		const xScaleSlider = document.createElement('input');
+		xScaleSlider.min = '-5';
+		xScaleSlider.max = '5';
+		xScaleSlider.step = '0.1';
+		xScaleSlider.value = String(this.scale[0]);
+		xScaleSlider.oninput = () => {
+			this.scale[0] = Number.parseFloat(xScaleSlider.value);
+			this.drawScene();
+			xScaleValue.innerText = xScaleSlider.value;
+		};
+
+		const yScaleLabel = document.createElement('div');
+		yScaleLabel.innerText = 'y scale';
+		yScaleLabel.className = 'sliderLabel';
+		const yScaleValue = document.createElement('div');
+		yScaleValue.innerText = String(this.scale[1]);
+		yScaleValue.className = 'sliderValue';
+
+		const yScaleSlider = document.createElement('input');
+		yScaleSlider.min = '-5';
+		yScaleSlider.max = '5';
+		yScaleSlider.step = '0.1';
+		yScaleSlider.value = String(this.scale[1]);
+		yScaleSlider.oninput = () => {
+			this.scale[1] = Number.parseFloat(yScaleSlider.value);
+			this.drawScene();
+			yScaleValue.innerText = yScaleSlider.value;
+		};
+
+		for(const slider of [xSlider, ySlider, rotationSlider, xScaleSlider, yScaleSlider]) {
 			slider.type = 'range';
-			slider.min = '0';
 			slider.className = 'slider';
 		}
 
@@ -173,6 +219,8 @@ class Drawing {
 		div.appendChild(xDiv);
 		div.appendChild(yDiv);
 		div.appendChild(rotationDiv);
+		div.appendChild(xScaleDiv);
+		div.appendChild(yScaleDiv);
 		xDiv.appendChild(xLabel);
 		xDiv.appendChild(xSlider);
 		xDiv.appendChild(xValue);
@@ -182,6 +230,12 @@ class Drawing {
 		rotationDiv.appendChild(rotationLabel);
 		rotationDiv.appendChild(rotationSlider);
 		rotationDiv.appendChild(rotationValue);
+		xScaleDiv.appendChild(xScaleLabel);
+		xScaleDiv.appendChild(xScaleSlider);
+		xScaleDiv.appendChild(xScaleValue);
+		yScaleDiv.appendChild(yScaleLabel);
+		yScaleDiv.appendChild(yScaleSlider);
+		yScaleDiv.appendChild(yScaleValue);
 	}
 }
 
