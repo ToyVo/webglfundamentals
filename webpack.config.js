@@ -30,7 +30,7 @@ module.exports = {
 	},
 	plugins: [
 		new HtmlWebpackPlugin({
-			title: 'THREE Testing',
+			template: './src/index.html'
 		}),
 	],
 	output: {
