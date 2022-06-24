@@ -2,9 +2,10 @@ import './index.css';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import fragment from './Shaders/fragment.glsl';
 import vertex from './Shaders/vertex.glsl';
-import createProgram from './program';
 import Matrix from './Matrix';
 import TrianglesGeometry from './Geometry/TrianglesGeometry';
+import createProgram, {degreesToRadians} from './Utility';
+import Vector from './Vector';
 
 class Drawing {
 	private readonly gl: WebGLRenderingContext;
@@ -17,9 +18,11 @@ class Drawing {
 	private readonly colorBuffer: WebGLBuffer;
 
 	private geometry: TrianglesGeometry;
-	private translation: {x: number, y: number, z: number} = {x: 500, y: 500, z: 0};
-	private rotation: {x: number, y: number, z: number} = {x: 40, y: 25, z: 325};
+	private translation: {x: number, y: number, z: number} = {x: -150, y: 0, z: -360};
+	private rotation: {x: number, y: number, z: number} = {x: 190, y: 40, z: 320};
 	private scale: {x: number, y: number, z: number} = {x: 1, y: 1, z: 1};
+	private fieldOfView: number = 60;
+	private cameraAngle: number = 0;
 
 	constructor() {
 		// Get A WebGL context
@@ -83,18 +86,54 @@ class Drawing {
 		this.gl.vertexAttribPointer(this.colorLocation, 4, this.gl.UNSIGNED_BYTE, true, 0, 0);
 
 		// Compute the matrix
-		const matrix = Matrix.orthographicMatrix(0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 400, -400)
-			.translate(this.translation.x, this.translation.y, this.translation.z)
-			.rotate(this.rotation.x * Math.PI / 180, this.rotation.y * Math.PI / 180, this.rotation.z * Math.PI / 180)
-			.scale(this.scale.x, this.scale.y, this.scale.z);
+		const radius = 200;
+		// Compute the projection matrix
+		const projectionMatrix = Matrix.perspectiveMatrix(degreesToRadians(this.fieldOfView), this.canvas.clientWidth / this.canvas.clientHeight, 1, 2000);
 
-		// Set the Matrix
-		this.gl.uniformMatrix4fv(this.matrixLocation, false, matrix.data);
+		// Compute the position of the first F
+		const fPosition = new Vector([radius, 0, 0]);
+		// Use matrix math to compute a position on a circle where the camera is
+		const cameraMatrix = Matrix.yRotationMatrix(degreesToRadians(this.cameraAngle)).translate(0, 0, radius * 1.5);
 
-		this.geometry.draw(this.gl);
+		// Get the camera's position from the matrix we computed
+		const cameraPosition = new Vector([
+			cameraMatrix.getValue(3, 0),
+			cameraMatrix.getValue(3, 1),
+			cameraMatrix.getValue(3, 2)
+		]);
+
+		const upDirection = new Vector([0, 1, 0]);
+
+		// Compute the camera's matrix using look at.
+		const lookAtMatrix = Matrix.lookAtMatrix(cameraPosition, fPosition, upDirection);
+
+		// Make a view matrix from the camera matrix.
+		const viewMatrix = lookAtMatrix.inverse();
+
+		// View Projection
+		const viewProjectionMatrix = projectionMatrix.multiply(viewMatrix);
+
+		for(let i = 0; i < 5; i++) {
+			const angle = i * Math.PI * 2 / 5; // 5 is the number of f's we are drawing
+			const x = Math.cos(angle) * radius;
+			const y = Math.sin(angle) * radius;
+
+			// starting with the view projection matrix
+			// compute a matrix for the F
+			const matrix = viewProjectionMatrix.translate(x, 0, y);
+
+			// Set the Matrix
+			this.gl.uniformMatrix4fv(this.matrixLocation, false, matrix.data);
+
+			this.geometry.draw(this.gl);
+		}
 	}
 
 	setupInput() {
+		this.createSlider('cameraAngle', -360, 360, 1, this.cameraAngle, (sliderValue => this.cameraAngle = sliderValue));
+		this.createSlider('fov', 1, 170, 1, this.fieldOfView, (sliderValue => {
+			this.fieldOfView = sliderValue;
+		}));
 		this.createSlider('x', 0, this.canvas.clientWidth, 1, this.translation.x, (sliderValue => {
 			this.translation.x = sliderValue;
 		}));
