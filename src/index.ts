@@ -18,7 +18,7 @@ class Drawing {
 
 	private geometry: TrianglesGeometry;
 	private translation: {x: number, y: number, z: number} = {x: 500, y: 500, z: 0};
-	private rotation: {x: number, y: number, z: number} = {x: 0, y: 0, z: 0};
+	private rotation: {x: number, y: number, z: number} = {x: 40, y: 25, z: 325};
 	private scale: {x: number, y: number, z: number} = {x: 1, y: 1, z: 1};
 
 	constructor() {
@@ -36,7 +36,7 @@ class Drawing {
 		this.matrixLocation = this.gl.getUniformLocation(this.program, 'u_matrix');
 
 		// setup geometries
-		this.geometry = TrianglesGeometry.Triangle(this.gl);
+		this.geometry = TrianglesGeometry.ThreeDF(this.gl);
 
 		// Create a buffer and bind it to ARRAY_BUFFER (think of it as ARRAY_BUFFER = positionBuffer)
 		this.positionBuffer = this.gl.createBuffer();
@@ -63,7 +63,11 @@ class Drawing {
 		this.gl.viewport(0, 0, this.canvas.clientWidth, this.canvas.clientHeight);
 
 		// Clear the canvas
-		this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+		this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+		// Turn on culling
+		this.gl.enable(this.gl.CULL_FACE);
+		this.gl.enable(this.gl.DEPTH_TEST);
 
 		// Tell it to use our program (pair of shaders)
 		this.gl.useProgram(this.program);
@@ -79,7 +83,7 @@ class Drawing {
 		this.gl.vertexAttribPointer(this.colorLocation, 4, this.gl.UNSIGNED_BYTE, true, 0, 0);
 
 		// Compute the matrix
-		const matrix = Matrix.projectionMatrix(this.canvas.clientWidth, this.canvas.clientHeight, this.canvas.clientHeight)
+		const matrix = Matrix.orthographicMatrix(0, this.canvas.clientWidth, this.canvas.clientHeight, 0, 400, -400)
 			.translate(this.translation.x, this.translation.y, this.translation.z)
 			.rotate(this.rotation.x * Math.PI / 180, this.rotation.y * Math.PI / 180, this.rotation.z * Math.PI / 180)
 			.scale(this.scale.x, this.scale.y, this.scale.z);
@@ -97,7 +101,7 @@ class Drawing {
 		this.createSlider('y', 0, this.canvas.clientHeight, 1, this.translation.y, (sliderValue => {
 			this.translation.y = sliderValue;
 		}));
-		this.createSlider('z', 0, this.canvas.clientHeight, 1, this.translation.z, (sliderValue => {
+		this.createSlider('z', -400, 400, 1, this.translation.z, (sliderValue => {
 			this.translation.z = sliderValue;
 		}));
 		this.createSlider('angleX', 0, 360, 1, this.rotation.x, (sliderValue => {
