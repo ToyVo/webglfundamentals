@@ -1,8 +1,7 @@
-import Geometry from './Geometry';
+export default class F {
+	public color: Float32List = new Float32Array([0, 0, 0, 1]);
 
-export default class F extends Geometry {
 	constructor(gl: WebGLRenderingContext, color?: Float32List) {
-		super(gl, color);
 		gl.bufferData(
 			gl.ARRAY_BUFFER,
 			new Float32Array([
@@ -31,6 +30,8 @@ export default class F extends Geometry {
 				67, 90
 			]),
 			gl.STATIC_DRAW);
+
+		if(color && color.length == 4) this.color = color;
 	}
 
 	public draw(gl: WebGLRenderingContext): void {
