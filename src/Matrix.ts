@@ -20,11 +20,19 @@ export default class Matrix {
 	}
 
 	rotate(rx: number, ry: number, rz: number): Matrix {
-		let rotate = new Matrix();
-		rotate = Matrix.multiply(rotate, Matrix.xRotationMatrix(rx));
-		rotate = Matrix.multiply(rotate, Matrix.yRotationMatrix(ry));
-		rotate = Matrix.multiply(rotate, Matrix.zRotationMatrix(rz));
-		return rotate;
+		return this.rotateX(rx).rotateY(ry).rotateZ(rz);
+	}
+
+	rotateX(radians): Matrix {
+		return Matrix.multiply(this, Matrix.xRotationMatrix(radians));
+	}
+
+	rotateY(radians): Matrix {
+		return Matrix.multiply(this, Matrix.yRotationMatrix(radians));
+	}
+
+	rotateZ(radians): Matrix {
+		return Matrix.multiply(this, Matrix.zRotationMatrix(radians));
 	}
 
 	scale(sx: number, sy: number, sz: number): Matrix {
