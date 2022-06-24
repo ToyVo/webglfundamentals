@@ -1,21 +1,17 @@
 export default class Matrix3 {
-	public data: Array<number> = [
+	public readonly data: Float32List = [
 		1, 0, 0,
 		0, 1, 0,
 		0, 0, 1
 	];
 
-	constructor(data?: Array<number>) {
+	constructor(data?: Float32List) {
 		if(data) {
 			if(data.length != 9) {
 				throw new Error('Matrix3 needs exactly 9 items');
 			}
 			this.data = data;
 		}
-	}
-
-	getData(): Float32List {
-		return new Float32Array(this.data);
 	}
 
 	translate(tx: number, ty: number): Matrix3 {
